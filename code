@@ -1,0 +1,95 @@
+import random
+#if you don't have deuces in your library do this in terminal: pip install deuces
+import deuces
+#do 'pip install pypokerengine' here
+from pypokerengine.players import BasePokerPlayer
+from pypokerengine.api.game import setup_config, start_poker
+random_action = random.choice([0, 1])
+deck = deuces.Deck()
+deck.shuffle()
+hand = deck.draw(2)
+
+class YourBotPlayer(BasePokerPlayer):
+    def declare_action(self, valid_actions, hole_card, round_state):
+        print(f"Your hole cards: {hole_card}")
+
+        # Ask for user input
+        action_input = input("What do you do? fold(0)/call(1)/raise(2): ")
+        selected_action = valid_actions[int(action_input)]
+
+        if selected_action['action'] == 'raise':
+            # If the selected action is 'raise', ask for the bet amount
+            bet_amount_input = input(f"Enter your bet amount ({selected_action['amount']['min']} - {selected_action['amount']['max']}): ")
+            selected_action['amount'] = int(bet_amount_input)
+
+        return selected_action['action'], selected_action['amount']
+
+    def receive_game_start_message(self, game_info):
+        print("--------------------------------------------------------------------------------------------")
+    def receive_round_start_message(self, round_count, hole_card, seats):
+        print(f"Round {round_count} - YourBotPlayer's hole cards: {hole_card}")
+    def receive_street_start_message(self, street, round_state):
+        pass
+    def receive_game_update_message(self, action, round_state):
+        pass
+    def receive_round_result_message(self, winners, hand_info, round_state):
+        pass
+    # Other methods remain the same
+
+    # Other methods remain the same
+
+
+# Add other bot classes if needed
+class SimpleBot1(BasePokerPlayer):
+    def __init__(self):
+        super().__init__()
+        self.hole_cards = hand
+
+    def declare_action(self, valid_actions, hole_card, round_state):
+        # Randomly choose between "call" and "bet" actions
+        if random.choice([True, False]):
+            action = valid_actions[1]  # "call"
+        else:
+            # Customize the bet amount based on your strategy
+            custom_min_bet = 20  # Example: set your desired minimum bet
+            custom_max_bet = 100  # Example: set your desired maximum bet
+            bet_amount = random.randint(custom_min_bet, custom_max_bet)
+            action = {'action': 'raise', 'amount': bet_amount}
+
+        return action['action'], action['amount']
+
+    def receive_game_start_message(self, game_info):
+        print("--------------------------------------------------------------------------------------------")
+
+    def receive_round_start_message(self, round_count, hole_card, seats):
+        self.hole_cards = hole_card
+
+    def receive_street_start_message(self, street, round_state):
+        pass
+
+    def receive_game_update_message(self, action, round_state):
+        pass
+
+    def receive_round_result_message(self, winners, hand_info, round_state):
+        print(f"SimpleBot1's hole cards: {self.hole_cards}")
+        pass
+
+
+
+
+
+def setup_game():
+    config = setup_config(max_round=5, initial_stack=1000, small_blind_amount=20)
+
+    # Add your bot(s) to the game
+    config.register_player(name="You", algorithm=YourBotPlayer())
+
+    # Add other bots if needed
+    config.register_player(name="OtherBot", algorithm=SimpleBot1())
+    return config
+
+
+if __name__ == "__main__":
+    config = setup_game()
+    game_result = start_poker(config)
+    print(game_result)
